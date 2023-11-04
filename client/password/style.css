@@ -1,0 +1,77 @@
+#gameDiv{
+    
+    
+    height: 600px;
+    width: 900px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+
+
+#board{
+    width: 900px;
+    height: 600px;
+    border-width: 2px;
+    border-style: solid;
+    display: inline-block;
+    padding-top:25px;
+    padding-left: 25px;
+    padding-right: 25px;
+    padding-bottom: 0px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+#password{
+    width: 300px;
+    height: 100px;
+    border-width: 2px;
+    border-style: solid;
+    font-size: 300%;
+    line-height:100px;
+}
+
+#passwordContainer{
+    padding-top: 70px;
+    padding-left:75px;
+}
+
+#availablePoints{
+    width:100px;
+    height:100px;
+    border-width: 2px;
+    border-style: solid;
+    font-size: 300%;
+    line-height: 100px;
+    margin-top: 10px;
+}
+
+#toggleTimer{
+     float: left;
+}
+
+#timer{
+    width:100px;
+    height:100px;
+    border-width: 2px;
+    border-style: solid;
+    font-size: 300%;
+    line-height: 100px;
+    margin-top: 33px;
+}
+
+#availablePointsContainer{
+    padding-top: 10px;
+    padding-left:175px;
+}
+
+.teams{
+    width: 200px;
+    height: 571px;
+    border-width: 8px;
+    border-style: solid;
+    display: inline-block;
+    text-align: center;
+    font-size: 200%;
+}

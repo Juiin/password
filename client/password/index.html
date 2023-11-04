@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet"  href="client/password/style.css" >
+        <title>Password</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+    </head>
+    <body>
+        <div id="signDiv">
+		Username: <input id="signDiv-username" type="text">
+		<button id="signDiv-signIn">Sign In</button>
+	</div>
+        
+        <div id="gameDiv" style="text-align: center; display:none;" >
+            <div id="board">
+                <div id="teamOne" class="teams" style="float: left"></div>
+                
+                <div id="middleStuff" style="display: inline-block;">
+                    <div id="chat-text" style="width:350px;height:100px;overflow-y:auto; border: 2px; border-style:solid ; display: inline-block; text-align: left;"></div>
+                    <div id="chat-user" style="width:100px;height:100px;overflow-y:auto;border: 2px; border-style:solid; display: inline-block ; text-align: left;"></div>
+                    <form id="chat-form" >
+				<input id="chat-input" type="text" style="width:350px;float:left;">
+                    </form>
+                    <button id="newGame" onClick="newGame()">New Game!</button>
+                    
+                    
+                    <div id="availablePointsContainer">
+                        <div> <button id="toggleTimer" onClick="toggleTimer()">Toggle Timer</button> </div>
+                        <div id="timer"></div>
+                        
+                        <div id="availablePoints"> </div> 
+                            
+                    </div>
+                    
+                    <div id="passwordContainer">
+                        <div id="password"></div>
+                    </div>
+                    <button id="turnFailure" > Failure!</button>
+                    <button id="turnSuccess" > Success!</button>  
+                </div>   
+                <div id="teamTwo" class="teams" style="float: right;"></div>
+            </div>
+        </div>
+        <script src="/client/password/socket.io-1.4.5.js"></script>
+        <script> 
+            
+        var socket = io();
+        //signing in
+        var signDiv = document.getElementById('signDiv');
+        var signDivUsername = document.getElementById('signDiv-username');
+        var signDivSignIn = document.getElementById('signDiv-signIn');
+
+        signDivSignIn.onclick = function(){
+            if(signDivUsername.value !== ""){
+                    socket.emit('signIn',{username:signDivUsername.value});
+            }
+            else alert("Please enter a Username!");
+        };
+        //Sign In with Enter
+        signDivUsername.addEventListener("keyup", function(event) {
+            event.preventDefault();
+            if (event.keyCode === 13) {
+                    signDivSignIn.click();
+            }
+        });
+
+        //Listen to Response
+        socket.on('signInResponse',function(data){
+                if(data.success){
+                        signDiv.style.display = 'none';
+                        gameDiv.style.display = 'inline-block';
+                } else
+                        alert("Username already in use!");
+        });
+        
+        //Chat
+        var chatText = document.getElementById('chat-text');
+        var chatInput = document.getElementById('chat-input');
+        var chatForm = document.getElementById("chat-form");
+        var chatUser = document.getElementById('chat-user');
+        
+        socket.on("addToChat",function(data){
+            chatText.innerHTML += "<div>" + data + "</div>";
+            chatText.scrollTop = chatText.scrollHeight;
+        });
+        chatForm.onsubmit = function(e){
+            e.preventDefault();
+            if(chatInput.value[0] === "/")
+                    socket.emit("evalServer",chatInput.value.slice(1));
+            else if(chatInput.value !== "")
+                    socket.emit("chatToEveryone",chatInput.value);
+            chatInput.value = "";
+        };
+        
+        //User Chat
+        socket.on("addToUserChat",function(data){
+            chatUser.innerHTML += "<div>" + data + "</div>";
+        });
+
+        socket.on("clearUserChat",function(){
+                chatUser.innerHTML = "";
+        });
+        
+        chatUser.onclick = function(){
+            socket.emit("joinTeam","");
+        };
+        
+        //Teams
+        var COLOR_RED = "#cd3333";
+        var COLOR_YELLOW = "#cd9b1d";
+        var COLOR_BLUE = "#1874cd";
+        var COLOR_BLACK = "#000000";
+        
+
+        var teamOne = document.getElementById("teamOne");
+        var teamTwo = document.getElementById("teamTwo");
+        var password = document.getElementById("password");
+        var availablePoints = document.getElementById("availablePoints");
+        var successButton = document.getElementById("turnSuccess");
+        var failureButton = document.getElementById("turnFailure");
+        
+        teamOne.style.background = COLOR_BLUE;
+        teamTwo.style.background = COLOR_RED;
+
+        
+        successButton.onclick = function(){
+            socket.emit("turnResult",true);
+        };
+        
+        failureButton.onclick = function(){
+            socket.emit("turnResult",false);
+        }; 
+        
+        socket.on("refreshTeamSheets",function(data){
+           //data is teamOneNameOne teamOneNameTwo etc. teamOneScore teamTwoScore, turn and round
+           if(data.turn === "blue") teamOne.style.color = COLOR_YELLOW; else teamOne.style.color = COLOR_BLACK;
+           if(data.turn === "red") teamTwo.style.color = COLOR_YELLOW; else teamTwo.style.color = COLOR_BLACK;
+           
+           var teamOneNameOneColor = COLOR_BLACK;
+           var teamOneNameTwoColor = COLOR_BLACK;
+           var teamTwoNameOneColor = COLOR_BLACK;
+           var teamTwoNameTwoColor = COLOR_BLACK;
+           
+           if(data.round === 1){
+               teamOneNameOneColor = COLOR_YELLOW;
+               teamTwoNameOneColor = COLOR_YELLOW;
+           }else if (data.round === 2){
+               teamOneNameTwoColor = COLOR_YELLOW;
+               teamTwoNameTwoColor = COLOR_YELLOW;
+           }
+           var teamOneOne = "";
+           var teamOneTwo = "";
+           var teamTwoOne = "";
+           var teamTwoTwo = "";
+           
+           if(data.teamOneNameOne === "none") teamOneOne = "<button onClick='joinTeam(\"blueOne\")'> Join! </button>";
+           else teamOneOne = "<span style=\"color:" + teamOneNameOneColor + "\">" + data.teamOneNameOne + "</span>";
+           
+           if(data.teamOneNameTwo === "none") teamOneTwo = "<button onClick='joinTeam(\"blueTwo\")'> Join! </button>";
+           else teamOneTwo = "<span style=\"color:" + teamOneNameTwoColor + "\">" + data.teamOneNameTwo + "</span>";
+           
+           if(data.teamTwoNameOne === "none") teamTwoOne = "<button onClick='joinTeam(\"redOne\")'> Join! </button>";
+           else teamTwoOne = "<span style=\"color:" + teamTwoNameOneColor + "\">" + data.teamTwoNameOne + "</span>";
+           
+           if(data.teamTwoNameTwo === "none") teamTwoTwo = "<button onClick='joinTeam(\"redTwo\")'> Join! </button>";
+           else teamTwoTwo = "<span style=\"color:" + teamTwoNameTwoColor + "\">" + data.teamTwoNameTwo + "</span>";
+
+           teamOne.innerHTML = "</br> " + teamOneOne + "</br></br></br></br></br></br>" + "<span style=\"color:black\">" + data.teamOneScore + "</span>" + "</br></br></br></br></br></br>" + teamOneTwo;
+           teamTwo.innerHTML = "</br> " + teamTwoOne + "</br></br></br></br></br></br>" + "<span style=\"color:black\">" + data.teamTwoScore + "</span>" + "</br></br></br></br></br></br>" + teamTwoTwo;
+        });
+        
+        var joinTeam = function(data){
+          socket.emit("joinTeam",data);  
+        };
+        
+        socket.on("teamButtonVisibility",function(data){
+           //data is object containing dis/enable and color of button
+           if(data.color === "blue"){
+               if(data.enable) blueTeamButton.style.display = "block";
+               else blueTeamButton.style.display = "none";
+           }else if (data.color === "red"){
+               if(data.enable) redTeamButton.style.display = "block";
+               else redTeamButton.style.display = "none";
+           }
+        });
+        
+        socket.on("resultButtonVisibility",function(data){
+            if(data){
+                successButton.style.display = "inline-block";
+                failureButton.style.display = "inline-block";
+            }else{
+                successButton.style.display = "none";
+                failureButton.style.display = "none";
+            }
+        });
+        
+        socket.on("displayPassword",function(data){
+           if(data.display) password.innerHTML = data.password;
+           else password.innerHTML = "********";
+        });
+        
+        socket.on("refreshAvailablePoints",function(data){
+            availablePoints.innerHTML = data;
+        });
+        
+        socket.on("refreshTimer",function(data){
+            timer.innerHTML = data;
+        });
+        
+        var newGame = function(){
+            if(window.confirm("Are you sure, you want to start a new game?")){
+              socket.emit("newGame"); 
+            }
+        };
+        
+        var toggleTimer = function(){
+            socket.emit("toggleTimer");
+        };
+        
+        //Debug
+        socket.on("evalAnswer",function(data){
+            console.log(data);
+        });
+        </script>
+    </body>
+</html>
